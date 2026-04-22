@@ -1,6 +1,4 @@
 // Feature: image-qa-app
-// Unit tests for Image_Validator (Requirements 1.2, 1.3)
-
 import { describe, it, expect } from "vitest";
 import { validate } from "./imageValidator.js";
 
@@ -99,7 +97,6 @@ describe("Image_Validator – check ordering", () => {
 import * as fc from "fast-check";
 
 // Feature: image-qa-app, Property 1: Client-side validation rejects oversized files
-// Validates: Requirements 1.2
 describe("Image_Validator – property tests", () => {
   it("Property 1: rejects any file whose size exceeds 5 MB", () => {
     fc.assert(
@@ -114,7 +111,6 @@ describe("Image_Validator – property tests", () => {
   });
 
   // Feature: image-qa-app, Property 2: Client-side validation rejects unsupported MIME types
-  // Validates: Requirements 1.3
   it("Property 2: rejects any unsupported MIME type", () => {
     fc.assert(
       fc.property(

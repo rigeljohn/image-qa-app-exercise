@@ -1,5 +1,5 @@
 // Feature: image-qa-app
-// Unit and property tests for QuestionValidator (Requirements 2.2, 2.4, 2.5)
+// Unit and property tests for QuestionValidator
 
 import { describe, it, expect } from "vitest";
 import { validate } from "./questionValidator.js";
@@ -98,7 +98,6 @@ describe("QuestionValidator – valid input", () => {
 // ---------------------------------------------------------------------------
 
 // Feature: image-qa-app, Property 3: Question validation rejects blank or whitespace-only input
-// Validates: Requirements 2.2
 describe("QuestionValidator – property tests", () => {
   it("Property 3: rejects any blank or whitespace-only string", () => {
     fc.assert(
@@ -112,7 +111,6 @@ describe("QuestionValidator – property tests", () => {
   });
 
   // Feature: image-qa-app, Property 4: Question validation enforces length bounds
-  // Validates: Requirements 2.4, 2.5
   it("Property 4a: rejects any string longer than 1000 characters", () => {
     fc.assert(
       fc.property(
