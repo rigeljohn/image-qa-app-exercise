@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Q&amp;A</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #1a1a1a;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── File input ── */
+    #image-input {
+      display: block;
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    #image-input:focus {
+      outline: 2px solid #0066cc;
+      outline-offset: 2px;
+    }
+
+    /* ── Image preview ── */
+    #image-preview-wrapper {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    #image-preview-wrapper.visible {
+      display: block;
+    }
+
+    #image-preview {
+      display: block;
+      max-width: 100%;
+      max-height: 320px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      object-fit: contain;
+    }
+
+    /* ── Textarea wrapper (for ghost suggestion overlay) ── */
+    .textarea-wrapper {
+      position: relative;
+    }
+
+    /* Ghost suggestion layer — sits behind the textarea */
+    #question-ghost {
+      position: absolute;
+      inset: 0;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      line-height: 1.5;
+      color: transparent;          /* real text invisible */
+      white-space: pre-wrap;
+      word-break: break-word;
+      pointer-events: none;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    /* The suggestion portion rendered as grey ghost text */
+    #question-ghost .ghost-suggestion {
+      color: #aaa;
+    }
+
+    /* Tab hint badge */
+    #suggestion-hint {
+      display: none;
+      position: absolute;
+      bottom: 0.4rem;
+      right: 0.5rem;
+      font-size: 0.72rem;
+      color: #999;
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 0.1rem 0.35rem;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #suggestion-hint.visible {
+      display: block;
+    }
+
+    /* ── Textarea ── */
+    #question-input {
+      display: block;
+      position: relative;          /* sits above ghost layer */
+      width: 100%;
+      min-height: 100px;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: vertical;
+      background: transparent;     /* let ghost show through */
+      z-index: 1;
+    }
+
+    #question-input:focus {
+      outline: 2px solid #0066cc;
+      outline-offset: 2px;
+    }
+
+    /* ── Character counter ── */
+    .char-counter {
+      text-align: right;
+      font-size: 0.8rem;
+      color: #777;
+      margin-top: 0.25rem;
+    }
+
+    .char-counter.over-limit {
+      color: #cc0000;
+      font-weight: 600;
+    }
+
+    /* ── Submit button ── */
+    #submit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #0066cc;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    #submit-btn:hover:not(:disabled) {
+      background: #0052a3;
+    }
+
+    #submit-btn:disabled {
+      background: #99c2e8;
+      cursor: not-allowed;
+    }
+
+    #submit-btn:focus {
+      outline: 2px solid #0066cc;
+      outline-offset: 2px;
+    }
+
+    /* ── Loading indicator ── */
+    #loading-indicator {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
+
+    #loading-indicator.visible {
+      display: flex;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #ccc;
+      border-top-color: #0066cc;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Error message ── */
+    #error-message {
+      display: none;
+      padding: 0.75rem 1rem;
+      background: #fff3f3;
+      border: 1px solid #f5c6c6;
+      border-radius: 4px;
+      color: #cc0000;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    #error-message.visible {
+      display: block;
+    }
+
+    /* ── Image validation error ── */
+    #image-error {
+      display: none;
+      font-size: 0.85rem;
+      color: #cc0000;
+      margin-top: 0.4rem;
+    }
+
+    #image-error.visible {
+      display: block;
+    }
+
+    /* ── Question validation error ── */
+    #question-error {
+      display: none;
+      font-size: 0.85rem;
+      color: #cc0000;
+      margin-top: 0.4rem;
+    }
+
+    #question-error.visible {
+      display: block;
+    }
+
+    /* ── Result area ── */
+    #result-area {
+      display: none;
+    }
+
+    #result-area.visible {
+      display: block;
+    }
+
+    #answer-text {
+      white-space: pre-wrap;       /* Req 4.3: preserve whitespace and line breaks */
+      word-break: break-word;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+
+    /* ── Request ID ── */
+    #request-id-area {
+      display: none;
+      margin-top: 0.75rem;
+      font-size: 0.78rem;
+      color: #888;
+    }
+
+    #request-id-area.visible {
+      display: block;
+    }
+
+    #request-id-value {
+      font-family: monospace;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Q&amp;A</h1>
+
+    <!-- ── Image upload ── -->
+    <div class="card">
+      <label class="section-label" for="image-input">Image</label>
+      <input
+        type="file"
+        id="image-input"
+        name="image"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        aria-describedby="image-error"
+      />
+      <div id="image-error" role="alert" aria-live="polite"></div>
+
+      <!-- Preview (hidden until a valid file is selected) -->
+      <div id="image-preview-wrapper" aria-hidden="true">
+        <img id="image-preview" src="" alt="Selected image preview" />
+      </div>
+    </div>
+
+    <!-- ── Question input ── -->
+    <div class="card">
+      <label class="section-label" for="question-input">Question</label>
+
+      <div class="textarea-wrapper">
+        <!-- Ghost suggestion overlay (behind textarea) -->
+        <div id="question-ghost" aria-hidden="true"></div>
+
+        <textarea
+          id="question-input"
+          name="question"
+          maxlength="2000"
+          aria-describedby="question-error char-counter"
+        ></textarea>
+
+        <!-- Tab-to-accept hint -->
+        <span id="suggestion-hint">Tab to accept</span>
+      </div>
+      <div id="char-counter" class="char-counter" aria-live="polite">0 / 1000</div>
+      <div id="question-error" role="alert" aria-live="polite"></div>
+    </div>
+
+    <!-- ── Submit ── -->
+    <div class="card">
+      <button type="button" id="submit-btn">Ask</button>
+
+      <!-- Loading indicator (hidden by default, Req 5.1) -->
+      <div id="loading-indicator" role="status" aria-live="polite" aria-label="Loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <span>Analysing image…</span>
+      </div>
+
+      <!-- General error message area (Req 5.2) -->
+      <div id="error-message" role="alert" aria-live="assertive"></div>
+    </div>
+
+    <!-- ── Result area (Req 4.1, 4.3, 13.4) ── -->
+    <div id="result-area" class="card" aria-live="polite">
+      <span class="section-label">Answer</span>
+      <div id="answer-text"></div>
+
+      <!-- Request ID display (Req 13.4) -->
+      <div id="request-id-area">
+        Request ID: <span id="request-id-value"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ghost suggestion logic (inline, no module needed) -->
+  <script>
+    (function () {
+      const PRESETS = [
+        'Read serial number',
+        'Count items on shelf',
+        'Check PPE compliance'
+      ];
+
+      const textarea   = document.getElementById('question-input');
+      const ghost      = document.getElementById('question-ghost');
+      const hint       = document.getElementById('suggestion-hint');
+
+      let currentSuggestion = '';
+
+      /** Pick a random preset different from the current textarea value */
+      function pickSuggestion() {
+        const val = textarea.value;
+        const candidates = PRESETS.filter(p => p !== val);
+        return candidates[Math.floor(Math.random() * candidates.length)];
+      }
+
+      /** Render the ghost overlay: typed text (transparent) + suggestion tail (grey) */
+      function renderGhost(typed, suggestion) {
+        if (!suggestion) {
+          ghost.innerHTML = '';
+          return;
+        }
+        // Show typed portion as invisible spacer + suggestion as grey text
+        const typedSpan      = document.createElement('span');
+        typedSpan.textContent = typed;
+
+        const suggSpan       = document.createElement('span');
+        suggSpan.className   = 'ghost-suggestion';
+        suggSpan.textContent  = suggestion.slice(typed.length);
+
+        ghost.innerHTML = '';
+        ghost.appendChild(typedSpan);
+        ghost.appendChild(suggSpan);
+      }
+
+      function showSuggestion() {
+        const val = textarea.value;
+        // Only suggest when textarea is empty or value is a prefix of a preset
+        const match = PRESETS.find(
+          p => p.toLowerCase().startsWith(val.toLowerCase()) && p !== val
+        );
+
+        if (val === '') {
+          // Empty: show a random preset as ghost
+          currentSuggestion = pickSuggestion();
+          renderGhost('', currentSuggestion);
+          hint.classList.add('visible');
+        } else if (match) {
+          // Partial match: complete the word
+          currentSuggestion = match;
+          renderGhost(val, match);
+          hint.classList.add('visible');
+        } else {
+          clearSuggestion();
+        }
+      }
+
+      function clearSuggestion() {
+        currentSuggestion = '';
+        ghost.innerHTML   = '';
+        hint.classList.remove('visible');
+      }
+
+      function acceptSuggestion() {
+        if (!currentSuggestion) return;
+        textarea.value = currentSuggestion;
+        clearSuggestion();
+        // Trigger input event so char counter / validators update
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      // Show suggestion when focused and empty
+      textarea.addEventListener('focus', showSuggestion);
+
+      // Update ghost as user types
+      textarea.addEventListener('input', showSuggestion);
+
+      // Tab accepts; Escape dismisses
+      textarea.addEventListener('keydown', function (e) {
+        if (e.key === 'Tab' && currentSuggestion) {
+          e.preventDefault();
+          acceptSuggestion();
+        } else if (e.key === 'Escape') {
+          clearSuggestion();
+        }
+      });
+
+      // Clear when focus leaves
+      textarea.addEventListener('blur', clearSuggestion);
+    })();
+  </script>
+</body>
+</html>
