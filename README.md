@@ -14,3 +14,6 @@ The image-qa-app is a stateless, single-purpose web application that lets users 
 Frontend - "Browser HTML + VANILLA JS"
 Backend - "Node.js Express"
 Gemini - "Gemini API - gemini-2.5-flash"
+
+npm test - runs all the validator unit and property test in public
+npm run test:watch - watch mode during development

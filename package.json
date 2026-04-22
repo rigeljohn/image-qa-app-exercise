@@ -1,5 +1,5 @@
 {
-  "name": "image-qa-app-exercise",
+  "name": "image-qa-app",
   "version": "1.0.0",
   "description": "Upload an image and ask a natural-language question powered by Gemini",
   "main": "src/server.ts",
