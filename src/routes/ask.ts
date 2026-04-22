@@ -5,7 +5,8 @@
  * and returns a structured JSON response.
  */
 
-import { RequestHandler } from 'express';
+import { RequestHandler, Request } from 'express';
+import type { File as MulterFile } from 'multer';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const multer = require('multer') as {
   (options: {
@@ -43,7 +44,7 @@ export const askHandler: RequestHandler = async (req, res): Promise<void> => {
   //    Multer enforces the 5 MB limit at the transport layer and emits a
   //    MulterError with code LIMIT_FILE_SIZE. However, if the file somehow
   //    slips through (e.g. in tests that bypass multer), we double-check here.
-  const file = req.file;
+  const file = (req as Request & { file?: MulterFile }).file;
   const MAX_BYTES = 5 * 1024 * 1024;
 
   if (file && file.buffer.length > MAX_BYTES) {
