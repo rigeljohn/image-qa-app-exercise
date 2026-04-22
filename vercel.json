@@ -1,5 +1,6 @@
 {
   "outputDirectory": "public",
+  "buildCommand": "",
   "rewrites": [
     { "source": "/(.*)", "destination": "/$1" }
   ]
