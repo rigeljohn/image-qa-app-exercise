@@ -215,7 +215,7 @@ export async function ask(options: AskOptions): Promise<AskResult> {
   let response: Awaited<ReturnType<typeof ai.models.generateContent>>;
   try {
     const apiCallPromise = ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       contents,
       config: generateConfig,
     });

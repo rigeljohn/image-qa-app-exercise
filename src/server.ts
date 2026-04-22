@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import path from 'path';
 import { askHandler, upload } from './routes/ask.js';
@@ -8,7 +9,19 @@ const multer = require('multer') as { MulterError: new (code: string) => Error &
 
 const app = express();
 
-// Serve static frontend files from public/
+// CORS — allow requests from the Vercel frontend (set FRONTEND_URL in Railway env vars)
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ['http://localhost:3000'];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    exposedHeaders: ['X-Request-ID'],
+  }),
+);
+
+// Serve static frontend files from public/ (used in local dev / single-process mode)
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // /api/ask route — handles image + question, proxies to Gemini

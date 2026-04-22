@@ -1,5 +1,11 @@
 // Feature: image-qa-app
 // ApiClient — wraps the fetch call to POST /api/ask
+// When deployed on Vercel, set window.API_BASE_URL via a config script or
+// use the VITE_/build-time injection. For plain static hosting we read a
+// global set by public/config.js (injected in index.html), falling back to
+// same-origin (local dev / single-process Railway deploy).
+const API_BASE_URL =
+  (typeof window !== 'undefined' && window.API_BASE_URL) || '';
 
 /**
  * Send an image and question to the backend /api/ask endpoint.
@@ -27,7 +33,7 @@ export async function ask(image, question, requestId, agenticMode = false, conve
 
   let response;
   try {
-    response = await fetch('/api/ask', {
+    response = await fetch(`${API_BASE_URL}/api/ask`, {
       method: 'POST',
       headers: {
         'X-Request-ID': requestId,
