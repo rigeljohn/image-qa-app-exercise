@@ -6,6 +6,7 @@
  */
 
 import { RequestHandler, Request } from 'express';
+import { randomUUID } from 'crypto';
 
 // Multer attaches the uploaded file to req.file; we extend the Request type
 // locally rather than augmenting the global namespace.
@@ -45,7 +46,7 @@ export const askHandler: RequestHandler = async (req, res): Promise<void> => {
   // 1. Resolve or generate a Request ID
   const requestId =
     (req.headers['x-request-id'] as string | undefined) ??
-    crypto.randomUUID();
+    randomUUID();
 
   // Always attach the Request ID to the response, even on error paths
   res.setHeader('X-Request-ID', requestId);
@@ -111,7 +112,7 @@ export const askHandler: RequestHandler = async (req, res): Promise<void> => {
     const message = err instanceof Error ? err.message : String(err);
 
     // 6. Map errors to appropriate HTTP status codes
-    if (message.includes('did not respond in time')) {
+    if (message.includes('did not respond in time') || message.includes('timed out')) {
       log('warn', 'Gemini timeout', { requestId, error: message });
       res.status(504).json({
         error: 'The AI model did not respond in time. Please try again.',
@@ -119,28 +120,11 @@ export const askHandler: RequestHandler = async (req, res): Promise<void> => {
       return;
     }
 
-    // Distinguish Gemini API errors from truly unexpected errors.
-    // The Gemini_Client re-throws SDK errors with sanitised messages.
-    // We treat any non-timeout error from the client as a 502 unless it
-    // looks like an internal/unexpected error.
-    const isGeminiError =
-      message.includes('API') ||
-      message.includes('model') ||
-      message.includes('Gemini') ||
-      message.includes('GEMINI') ||
-      message.includes('quota') ||
-      message.includes('permission') ||
-      message.includes('invalid') ||
-      message.includes('Request failed') ||
-      message.includes('Authentication');
-
-    if (isGeminiError) {
-      log('error', 'Gemini API error', { requestId, error: message });
-      res.status(502).json({ error: message });
-      return;
-    }
-
-    log('error', 'Unexpected error', { requestId, error: message });
-    res.status(500).json({ error: 'An unexpected error occurred' });
+    // Treat any error thrown by Gemini_Client as a 502 — the client already
+    // sanitises the message (strips API key) before re-throwing, so it is
+    // safe to forward. This covers quota errors, 503 UNAVAILABLE, auth
+    // failures, and any other SDK-level error.
+    log('error', 'Gemini API error', { requestId, error: message });
+    res.status(502).json({ error: message });
   }
 };

@@ -6,6 +6,7 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
+import { randomUUID } from 'crypto';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -52,7 +53,7 @@ function scrubApiKey(text: string): string {
 
 /** Generate a simple request ID (UUID v4 format). */
 function generateRequestId(): string {
-  return crypto.randomUUID();
+  return randomUUID();
 }
 
 // ---------------------------------------------------------------------------
