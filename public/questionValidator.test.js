@@ -102,7 +102,7 @@ describe("QuestionValidator – property tests", () => {
   it("Property 3: rejects any blank or whitespace-only string", () => {
     fc.assert(
       fc.property(
-        fc.string({ unit: fc.constantFrom(" ", "\t", "\n", "\r") }),
+        fc.array(fc.constantFrom(" ", "\t", "\n", "\r")).map((chars) => chars.join("")),
         (whitespaceStr) => {
           return validate(whitespaceStr).valid === false;
         }
