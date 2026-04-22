@@ -6,7 +6,17 @@
  */
 
 import { RequestHandler, Request } from 'express';
-import type { File as MulterFile } from 'multer';
+
+// Multer attaches the uploaded file to req.file; we extend the Request type
+// locally rather than augmenting the global namespace.
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const multer = require('multer') as {
   (options: {
