@@ -1,1 +1,0 @@
-# image-qa-app-exercise
