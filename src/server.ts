@@ -1,29 +1,35 @@
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import path from 'path';
+import { askHandler, upload } from './routes/ask.js';
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const multer = require('multer') as {
-  (options: {
-    storage: ReturnType<typeof multer.memoryStorage>;
-    limits?: { fileSize?: number };
-  }): { single(fieldName: string): express.RequestHandler };
-  memoryStorage(): object;
-};
+const multer = require('multer') as { MulterError: new (code: string) => Error & { code: string } };
 
 const app = express();
 
 // Serve static frontend files from public/
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Configure multer with memory storage and 5 MB file size limit
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+// /api/ask route — handles image + question, proxies to Gemini
+app.post('/api/ask', upload.single('image'), askHandler);
 
-// Placeholder /api/ask route — actual handler implemented in task 8
-app.post('/api/ask', upload.single('image'), (_req, res) => {
-  res.status(501).json({ error: 'Not Implemented' });
-});
+// Multer error handler: catches LIMIT_FILE_SIZE and returns 413
+// Must be defined after the route and have 4 parameters (err, req, res, next)
+app.use(
+  '/api/ask',
+  (
+    err: Error & { code?: string },
+    _req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => {
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      res.status(413).json({ error: 'Image exceeds the 5 MB limit' });
+      return;
+    }
+    next(err);
+  },
+);
 
 // Start listening only when this module is the entry point
 if (require.main === module) {
